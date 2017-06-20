@@ -1,14 +1,30 @@
 <ion-header>
-  <ion-navbar>
-    <ion-title>
-      Ionic Blank
-    </ion-title>
-  </ion-navbar>
+    <ion-navbar>
+        <ion-title>
+            Ionic SQLdata
+        </ion-title>
+    </ion-navbar>
 </ion-header>
 
 <ion-content padding>
-  The world is your oyster.
-  <p>
-    If you get lost, the <a href="http://ionicframework.com/docs/v2">docs</a> will be your guide.
-  </p>
+    <ion-item>
+        <ion-label stacked>What's your name?</ion-label>
+        <ion-input [(ngModel)]="developer.name" placeholder="Developer Name"></ion-input>
+    </ion-item>
+    <ion-item>
+        <ion-label stacked>What's your special skill?</ion-label>
+        <ion-input [(ngModel)]="developer.skill" placeholder="Special Skill"></ion-input>
+    </ion-item>
+    <ion-item>
+        <ion-label stacked>How long have you been working?</ion-label>
+        <ion-input [(ngModel)]="developer.yearsOfExperience" placeholder="Years of experience"></ion-input>
+    </ion-item>
+    <button ion-button full (click)="addDeveloper()">Add Developer Info</button>
+
+    <ion-list>
+        <ion-item *ngFor="let dev of developers">
+            <h2>{{ dev.name }}</h2>
+            <p>{{ dev.yearsOfExperience }} years of {{ dev.skill }} Experience!</p>
+        </ion-item>
+    </ion-list>
 </ion-content>

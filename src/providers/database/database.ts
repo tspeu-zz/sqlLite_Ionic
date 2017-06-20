@@ -1,18 +1,87 @@
 import { Injectable } from '@angular/core';
+import { Platform } from 'ionic-angular';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/map';
 
-/*
-  Generated class for the DatabaseProvider provider.
+import { SQLite, SQLiteObject } from '@ionic-native/sqlite';
+import { SQLitePorter } from '@ionic-native/sqlite-porter';
 
-  See https://angular.io/docs/ts/latest/guide/dependency-injection.html
-  for more info on providers and Angular DI.
-*/
+import { BehaviorSubject } from 'rxjs/Rx';
+import { Storage } from '@ionic/storage';
+//, private http: Http
 @Injectable()
 export class DatabaseProvider {
 
-  constructor(public http: Http) {
+	database: SQLiteObject;
+	private databaseReady : BehaviorSubject<boolean>;
+
+
+  constructor(public http: Http,public sqlitePorter: SQLitePorter, private storage: Storage, private sqlite: SQLite, private platform: Platform) 
+  {
     console.log('Hello DatabaseProvider Provider');
+	
+	this.databaseReady = new BehaviorSubject(false);
+    this.platform.ready().then(() => {
+      	this.sqlite.create({
+        	name: 'developers.db',
+        	location: 'default'
+      	})
+        .then((db: SQLiteObject) => {
+          this.database = db;
+          this.storage.get('database_filled').then(val => {
+            if (val) {
+              this.databaseReady.next(true);
+            } else {
+              this.fillDatabase();
+            }
+          });
+        });
+    });
+
+
+ }
+//fin contructor
+	
+	fillDatabase() {
+    this.http.get('assets/dummyDump.sql')
+      .map(res => res.text())
+      .subscribe(sql => {
+        this.sqlitePorter.importSqlToDb(this.database, sql)
+          .then(data => {
+            this.databaseReady.next(true);
+            this.storage.set('database_filled', true);
+          })
+          .catch(e => console.error(e));
+      });
+  }
+ 
+  addDeveloper(name, skill, years) {
+    let data = [name, skill, years]
+    return this.database.executeSql("INSERT INTO developer (name, skill, yearsOfExperience) VALUES (?, ?, ?)", data).then(data => {
+      return data;
+    }, err => {
+      console.log('Error: ', err);
+      return err;
+    });
+  }
+ 
+  getAllDevelopers() {
+    return this.database.executeSql("SELECT * FROM developer", []).then((data) => {
+      let developers = [];
+      if (data.rows.length > 0) {
+        for (var i = 0; i < data.rows.length; i++) {
+          developers.push({ name: data.rows.item(i).name, skill: data.rows.item(i).skill, yearsOfExperience: data.rows.item(i).yearsOfExperience });
+        }
+      }
+      return developers;
+    }, err => {
+      console.log('Error: ', err);
+      return [];
+    });
+  }
+ 
+  getDatabaseState() {
+    return this.databaseReady.asObservable();
   }
 
 }
